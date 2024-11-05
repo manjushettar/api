@@ -18,6 +18,8 @@ func main(){
     http.HandleFunc("/getByEmail", handlers.GetByEmail)
 
     http.HandleFunc("/getByName", handlers.GetByName)
+    
+    http.HandleFunc("/getLoggedIn", handlers.GetAllLoggedIn)
 
     fmt.Println("Server starting on port 8000")
     http.ListenAndServe(":8000", nil)

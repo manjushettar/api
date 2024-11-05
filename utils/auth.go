@@ -37,6 +37,19 @@ func IncrementUserID() string {
     return strconv.Itoa(models.UserID)
 }
 
+func GetAll() (string, bool){
+    str := ""
+
+    for _, val := range models.UserMap{
+        str += "[" + val.UserID + "] " + val.Name + ": " + val.Email + "\n"
+    }
+    
+    if len(str) == 0{
+        return "", false
+    }
+    return str, true
+}
+
 func FindUserByField(value string, field string) (*models.User, bool) {
     for _, val := range models.UserMap {
         switch field {
@@ -51,6 +64,23 @@ func FindUserByField(value string, field string) (*models.User, bool) {
         }
     }
     return &models.User{}, false
+}
+
+func FindAllUsersLoggedIn() (string, bool){
+    str := ""
+
+    for _, val := range models.UserMap {
+        if val.LoggedIn {
+            tmp :=  "[" + val.Email + "] " + val.Name + "\n"
+            str += tmp
+        }
+    }
+    
+    if len(str) == 0{
+        return "", false
+    }
+
+    return str, true
 }
 
 func IsLoggedIn(u *models.User) bool{

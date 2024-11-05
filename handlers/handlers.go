@@ -82,11 +82,14 @@ func GetAll(w http.ResponseWriter, r *http.Request) {
         fmt.Fprintf(w, "Invalid Request.\n")
         return
     }
-
-    str := ""
-    for _, usr := range models.UserMap{
-        str += "Name: " + usr.Name + " email: " + usr.Email + " id: " + usr.UserID + "\n"
+    
+    str, ok := utils.GetAll()
+    
+    if !ok{
+        fmt.Fprintf(w, "No users.\n")
+        return
     }
+
     fmt.Fprintf(w, str)
 }
 
@@ -141,6 +144,22 @@ func GetByEmail(w http.ResponseWriter, r *http.Request) {
     } 
     
     fmt.Fprintf(w, "User: %v, email: %v, id: %v\n", val.Name, val.Email, val.UserID)
+}
+
+func GetAllLoggedIn(w http.ResponseWriter, r *http.Request){
+    if r.Method != "GET"{
+        fmt.Fprintf(w, "Invalid request.\n")
+        return
+    }
+    
+    val, found := utils.FindAllUsersLoggedIn()
+
+    if !found {
+        fmt.Fprintf(w, "No logged in users\n")
+        return
+    }
+    
+    fmt.Fprintf(w, val)
 }
 
 
