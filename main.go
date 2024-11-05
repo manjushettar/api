@@ -22,7 +22,7 @@ type user struct {
 }
 
 type registration struct {
-    Username string `json:"username"`
+    Name string `json:"name"`
     Password string `json:"password"`
     Email string `json:"email"`
 }
@@ -60,7 +60,7 @@ func register(w http.ResponseWriter, r *http.Request) {
             return
         }
         
-        name := reg.Username
+        name := reg.Name
         email := reg.Email
         password := reg.Password
 
@@ -89,9 +89,53 @@ func getByID(w http.ResponseWriter, r *http.Request) {
 
         val, ok := user_map[id]
         if !ok{
+            fmt.Fprintf(w, "No user by that id\n")
+        } else{
+            fmt.Fprintf(w, "User: %v, email: %v, id: %v\n", val.name, val.email, val.userID)
+        }
+    }
+}
+
+func findUserByField(value string, field string) (*user, bool) {
+    for _, val := range user_map{
+        switch field{
+        case "name":
+            if val.name == value {
+                return &val, true
+            }
+        case "email":
+            if val.email == value {
+                return &val, true
+            }
+        }
+    }
+    return &user{}, false
+}
+
+func getByName(w http.ResponseWriter, r *http.Request) {
+    if r.Method == "GET"{
+        name := r.URL.Query().Get("name")
+
+        val, found := findUserByField(name, "name")
+        if !found{
             fmt.Fprintf(w, "No user by that name\n")
         } else{
             fmt.Fprintf(w, "User: %v, email: %v, id: %v\n", val.name, val.email, val.userID)
+        
+        }
+    }
+}
+
+func getByEmail(w http.ResponseWriter, r *http.Request) {
+    if r.Method == "GET"{
+        email := r.URL.Query().Get("email")
+
+        val, found := findUserByField(email, "email")
+        if !found{
+            fmt.Fprintf(w, "No user by that email\n")
+        } else{
+            fmt.Fprintf(w, "User: %v, email: %v, id: %v\n", val.name, val.email, val.userID)
+        
         }
     }
 }
@@ -102,7 +146,11 @@ func main(){
     
     http.HandleFunc("/getAll", getAll)
 
-    http.HandleFunc("/getUser", getByID)
+    http.HandleFunc("/getByID", getByID)
+    
+    http.HandleFunc("/getByEmail", getByEmail)
+
+    http.HandleFunc("/getByName", getByName)
 
     fmt.Println("Server starting on port 8000")
     http.ListenAndServe(":8000", nil)
