@@ -2,11 +2,56 @@ package utils
 
 import (
     "golang.org/x/crypto/bcrypt"
+    "github.com/golang-jwt/jwt/v5"
     "encoding/json"
     "io"
     "strconv"
     "api/models"
+    "time"
+    "errors"
 )
+
+type Claims struct {
+    UserID string `json:"user_id"`
+    Email string `json:"email"`
+    jwt.RegisteredClaims
+}
+
+func CreateToken(userID string, email string) (string, error){
+    expirationTime := time.Now().Add(1*time.Hour)
+
+    claims := Claims{
+        UserID: userID,
+        Email: email,
+        RegisteredClaims: jwt.RegisteredClaims{
+            ExpiresAt: jwt.NewNumericDate(expirationTime),
+            IssuedAt: jwt.NewNumericDate(time.Now()),
+        },
+    }
+
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    secretKey := []byte("key")
+    tokenString, err := token.SignedString(secretKey)
+    return tokenString, err
+}
+
+func VerifyToken(tokenString string) (*Claims, error){
+    claims := &Claims{}
+
+    token, err := jwt.ParseWithClaims(tokenString, claims, func ( token *jwt.Token) (interface{}, error){
+        return []byte("key"), nil
+    })
+
+    if err != nil{
+        return claims, nil
+    }
+    
+    if !token.Valid{
+        return nil, errors.New("Invalid token")
+    }
+
+    return claims, nil
+}
 
 func HashPassword(pass string) ([]byte, error) {
     return bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)

@@ -1,11 +1,15 @@
 package handlers
 
 import (
+    "context"
     "net/http"
+    "encoding/json"
     "fmt"
     "api/models"
     "api/utils"
+    "strings"
 )
+
 
 func Register(w http.ResponseWriter, r *http.Request) {
     if r.Method != "POST" {
@@ -72,10 +76,53 @@ func Login(w http.ResponseWriter, r *http.Request) {
     ok := utils.LoginUser(usr, log.Password)
     if !ok {
         http.Error(w, "Invalid credentials", http.StatusUnauthorized)
-    } else{
-        fmt.Fprintf(w, "[%v] logged in\n", log.Email) 
+    } 
+    
+    token, err := utils.CreateToken(usr.UserID, usr.Email)
+    if err != nil{
+        http.Error(w, "Invalid token.\n", http.StatusUnauthorized)
+        return
+    }
+    json.NewEncoder(w).Encode(map[string]string{
+        "token":token,
+    })
+
+    fmt.Fprintf(w, "[%v] logged in\n", log.Email) 
+}
+
+func AuthWrapper(next http.HandlerFunc) http.HandlerFunc {
+    return func (w http.ResponseWriter, r *http.Request) {
+        authHeader := r.Header.Get("Authorization")
+
+        if authHeader == ""{
+            http.Error(w, "Authorization header required.", http.StatusUnauthorized)
+            return
+        }
+        
+        tokenString := strings.Replace(authHeader, "Bearer ", "", 1)
+        claims, err := utils.VerifyToken(tokenString) 
+        
+        if err != nil{
+            http.Error(w, "Invalid authorization token.", http.StatusUnauthorized)
+            return
+        }
+
+        ctx := context.WithValue(r.Context(), "user", claims)
+        next.ServeHTTP(w, r.WithContext(ctx))
     }
 }
+
+func GetProfile(w http.ResponseWriter, r *http.Request){
+    if r.Method != "GET"{
+        fmt.Fprintf(w, "Invalid request.\n")
+        return
+    }
+    
+    claim := r.Context().Value("user").(*utils.Claims)
+
+    fmt.Fprintf(w, "Email: %v\n", claim.Email)
+}
+
 
 func GetAll(w http.ResponseWriter, r *http.Request) {
     if r.Method != "GET"{
